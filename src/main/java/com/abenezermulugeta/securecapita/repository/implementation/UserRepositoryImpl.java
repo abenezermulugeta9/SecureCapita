@@ -34,8 +34,8 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public class UserRepositoryImpl implements UserRepository {
     private final NamedParameterJdbcTemplate jdbc;
-    private final RoleRepository roleRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
 
     @Override
     public User create(User user) {
@@ -72,8 +72,6 @@ public class UserRepositoryImpl implements UserRepository {
             return user;
 
             // If any errors, throw exception with proper message
-        }catch (EmptyResultDataAccessException exception) {
-            throw new ApiException("No role found by name: " + ROLE_USER.name());
         } catch (Exception exception){
             throw new ApiException("An error occurred. Please try again.");
         }
