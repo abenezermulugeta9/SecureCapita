@@ -6,11 +6,11 @@
 
 package com.abenezermulugeta.securecapita.repository;
 
-import com.abenezermulugeta.securecapita.domain.User;
+import com.abenezermulugeta.securecapita.domain.Role;
 import java.util.Collection;
 
-public interface UserRepository<T extends User> {
-    /* Basic CRUD Operations */
+public interface RoleRepository<T extends Role> {
+    /* Basic  CRUD Operations */
     T create(T data);
     Collection<T> list(int page, int pageSize);
     T get(Long id);
@@ -18,4 +18,5 @@ public interface UserRepository<T extends User> {
     Boolean delete(Long id);
 
     /* Complex Operations */
+    void addRoleToUser(Long userId, String roleName);
 }
