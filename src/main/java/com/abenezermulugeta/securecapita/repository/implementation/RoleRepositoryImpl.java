@@ -60,7 +60,7 @@ public class RoleRepositoryImpl implements RoleRepository<Role> {
         log.info("Adding role {} to user id: {}", roleName, userId);
         try {
             // Get if role exists and map it to the role entity by using RoleRowMapper
-            Role role = jdbc.queryForObject(SELECT_ROLE_BY_ROLE_NAME_QUERY, Map.of("roleName", roleName), new RoleRowMapper());
+            Role role = jdbc.queryForObject(SELECT_ROLE_BY_ROLE_NAME_QUERY, Map.of("name", roleName), new RoleRowMapper());
 
             jdbc.update(INSERT_ROLE_TO_USER_QUERY, Map.of("userId", userId, "roleId", requireNonNull(role.getId())));
         } catch (EmptyResultDataAccessException exception) {
