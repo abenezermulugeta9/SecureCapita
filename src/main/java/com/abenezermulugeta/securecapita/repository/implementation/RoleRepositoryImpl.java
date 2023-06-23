@@ -15,8 +15,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
+
 import java.util.Collection;
 import java.util.Map;
+
 import static com.abenezermulugeta.securecapita.enumeration.RoleType.ROLE_USER;
 import static com.abenezermulugeta.securecapita.query.RoleQuery.INSERT_ROLE_TO_USER_QUERY;
 import static com.abenezermulugeta.securecapita.query.RoleQuery.SELECT_ROLE_BY_ROLE_NAME_QUERY;
