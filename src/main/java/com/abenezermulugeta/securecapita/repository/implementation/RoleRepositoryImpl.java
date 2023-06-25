@@ -20,8 +20,8 @@ import java.util.Collection;
 import java.util.Map;
 
 import static com.abenezermulugeta.securecapita.enumeration.RoleType.ROLE_USER;
-import static com.abenezermulugeta.securecapita.query.RoleQuery.INSERT_ROLE_TO_USER_QUERY;
-import static com.abenezermulugeta.securecapita.query.RoleQuery.SELECT_ROLE_BY_ROLE_NAME_QUERY;
+import static com.abenezermulugeta.securecapita.query.RoleQuery.*;
+import static java.util.Map.*;
 import static java.util.Objects.requireNonNull;
 
 @Repository
@@ -59,20 +59,28 @@ public class RoleRepositoryImpl implements RoleRepository<Role> {
     public void addRoleToUser(Long userId, String roleName) {
         log.info("Adding role {} to user id: {}", roleName, userId);
         try {
-            // Get if role exists and map it to the role entity by using RoleRowMapper
-            Role role = jdbc.queryForObject(SELECT_ROLE_BY_ROLE_NAME_QUERY, Map.of("name", roleName), new RoleRowMapper());
-
-            jdbc.update(INSERT_ROLE_TO_USER_QUERY, Map.of("userId", userId, "roleId", requireNonNull(role.getId())));
+            Role role = jdbc.queryForObject(SELECT_ROLE_BY_NAME_QUERY, of("name", roleName), new RoleRowMapper());
+            jdbc.update(INSERT_ROLE_TO_USER_QUERY, of("userId", userId, "roleId", requireNonNull(role).getId()));
         } catch (EmptyResultDataAccessException exception) {
             throw new ApiException("No role found by name: " + ROLE_USER.name());
+
         } catch (Exception exception) {
+            log.error(exception.getMessage());
             throw new ApiException("An error occurred. Please try again.");
         }
     }
 
     @Override
     public Role getRoleByUserId(Long userId) {
-        return null;
+        log.info("Adding role for user id: {}", userId);
+        try {
+            return jdbc.queryForObject(SELECT_ROLE_BY_ID_QUERY, of("id", userId), new RoleRowMapper());
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ApiException("No role found by name: " + ROLE_USER.name());
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
     }
 
     @Override

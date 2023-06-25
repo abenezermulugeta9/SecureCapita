@@ -11,4 +11,5 @@ import com.abenezermulugeta.securecapita.dto.UserDto;
 
 public interface UserService {
     UserDto createUser(User user);
+    UserDto getUserByEmail(String email);
 }
