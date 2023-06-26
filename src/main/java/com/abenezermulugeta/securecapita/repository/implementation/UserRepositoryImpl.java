@@ -9,6 +9,7 @@ package com.abenezermulugeta.securecapita.repository.implementation;
 import com.abenezermulugeta.securecapita.domain.Role;
 import com.abenezermulugeta.securecapita.domain.User;
 import com.abenezermulugeta.securecapita.domain.UserPrincipal;
+import com.abenezermulugeta.securecapita.dto.UserDto;
 import com.abenezermulugeta.securecapita.exception.ApiException;
 import com.abenezermulugeta.securecapita.repository.RoleRepository;
 import com.abenezermulugeta.securecapita.repository.UserRepository;
@@ -29,14 +30,17 @@ import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Collection;
-import java.util.Map;
+import java.util.Date;
 import java.util.UUID;
 
 import static com.abenezermulugeta.securecapita.enumeration.RoleType.ROLE_USER;
 import static com.abenezermulugeta.securecapita.enumeration.VerificationType.ACCOUNT;
 import static com.abenezermulugeta.securecapita.query.UserQuery.*;
-import static java.util.Map.*;
+import static java.util.Map.of;
 import static java.util.Objects.requireNonNull;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.time.DateFormatUtils.format;
+import static org.apache.commons.lang3.time.DateUtils.addDays;
 
 @Repository
 @RequiredArgsConstructor
@@ -45,7 +49,8 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
     private final NamedParameterJdbcTemplate jdbc;
     private final RoleRepository<Role> roleRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final String userNotFound = "User not found in the database.";
+    private final String USER_NOT_FOUND = "User not found in the database.";
+    private final String DATE_FORMAT = "yyyy-MM-dd hh:mm:ss";
 
     @Override
     public User create(User user) {
@@ -56,7 +61,7 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
             // Generates a new id for the user
             KeyHolder holder = new GeneratedKeyHolder();
 
-            SqlParameterSource parameters = getSqlParameterSource(user);
+            SqlParameterSource parameters = getSqlParametersForCreatingUser(user);
 
             // Save the new User
             jdbc.update(INSERT_USER_QUERY, parameters, holder);
@@ -112,14 +117,6 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
         return jdbc.queryForObject(COUNT_USER_EMAIL_QUERY, of("email", email), Integer.class);
     }
 
-    private SqlParameterSource getSqlParameterSource(User user) {
-        return new MapSqlParameterSource()
-                .addValue("firstName", user.getFirstName())
-                .addValue("lastName", user.getLastName())
-                .addValue("email", user.getEmail())
-                .addValue("password", passwordEncoder.encode(user.getPassword()));
-    }
-
     private String getVerificationUrl(String key, String accountType) {
         // ServletUriComponentsBuilder.fromCurrentContextPath() method returns the url that this server is running on
         return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify/" + accountType + '/' + key).toUriString();
@@ -128,14 +125,15 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = getUserByEmail(email);
-        if(user == null) {
-            log.error("User not found in the database");
-            throw new UsernameNotFoundException("User not found in the database");
+        if (user == null) {
+            log.error(USER_NOT_FOUND);
+            throw new UsernameNotFoundException(USER_NOT_FOUND);
         } else {
             log.info("User found in the database: {}", email);
             return new UserPrincipal(user, roleRepository.getRoleByUserId(user.getId()).getPermission());
         }
     }
+
     @Override
     public User getUserByEmail(String email) {
         try {
@@ -147,5 +145,33 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
             log.error(exception.getMessage());
             throw new ApiException("An error occurred. Please try again.");
         }
+    }
+
+    @Override
+    public void sendVerificationCode(UserDto userDto) {
+        String expirationDate = format(addDays(new Date(), 1), DATE_FORMAT);
+        String verificationCode = randomAlphabetic(8).toUpperCase();
+
+        try {
+            jdbc.update(DELETE_VERIFICATION_CODE_BY_USER_ID_QUERY, of("id", userDto.getId()));
+            jdbc.update(INSERT_VERIFICATION_CODE_QUERY, of("userId", userDto.getId(), "verificationCode", verificationCode, "expirationDate", expirationDate));
+
+            /**
+             * Uncomment this line to activate two-factor authentication using SMS
+             * sendSMS(userDto.getPhone(), "From: SecureCapita \n Use the following code to enable two-factor authentication. \n Verification Code: " + verificationCode);
+             * */
+
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again");
+        }
+    }
+
+    private SqlParameterSource getSqlParametersForCreatingUser(User user) {
+        return new MapSqlParameterSource()
+                .addValue("firstName", user.getFirstName())
+                .addValue("lastName", user.getLastName())
+                .addValue("email", user.getEmail())
+                .addValue("password", passwordEncoder.encode(user.getPassword()));
     }
 }

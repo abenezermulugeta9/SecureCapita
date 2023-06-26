@@ -11,6 +11,7 @@ import com.abenezermulugeta.securecapita.domain.User;
 import com.abenezermulugeta.securecapita.dto.UserDto;
 import com.abenezermulugeta.securecapita.form.LoginForm;
 import com.abenezermulugeta.securecapita.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import jakarta.validation.Valid;
 import java.net.URI;
 
 import static java.time.LocalTime.now;
@@ -40,14 +40,7 @@ public class UserResource {
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginForm.getEmail(), loginForm.getPassword()));
         UserDto userDto = userService.getUserByEmail(loginForm.getEmail());
-        return ResponseEntity.ok().body(
-                HttpResponse.builder()
-                        .timeStamp(now().toString())
-                        .data(of("user", userDto))
-                        .message("Login successful.")
-                        .httpStatus(OK)
-                        .statusCode(OK.value())
-                        .build());
+        return userDto.isUsingMfa() ? sendVerificationCode(userDto) : sendResponse(userDto);
     }
 
     @PostMapping("/register")
@@ -65,5 +58,28 @@ public class UserResource {
 
     private URI getUri() {
         return URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/get/<userId>").toUriString());
+    }
+
+    private ResponseEntity<HttpResponse> sendVerificationCode(UserDto userDto) {
+        userService.sendVerificationCode(userDto);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(of("user", userDto))
+                        .message("Verification code sent.")
+                        .httpStatus(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+    private ResponseEntity<HttpResponse> sendResponse(UserDto userDto) {
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(of("user", userDto))
+                        .message("Login successful.")
+                        .httpStatus(OK)
+                        .statusCode(OK.value())
+                        .build());
     }
 }
