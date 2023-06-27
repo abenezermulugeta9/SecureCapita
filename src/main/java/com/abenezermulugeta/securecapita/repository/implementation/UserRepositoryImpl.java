@@ -113,15 +113,6 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
         return null;
     }
 
-    private Integer getEmailCount(String email) {
-        return jdbc.queryForObject(COUNT_USER_EMAIL_QUERY, of("email", email), Integer.class);
-    }
-
-    private String getVerificationUrl(String key, String accountType) {
-        // ServletUriComponentsBuilder.fromCurrentContextPath() method returns the url that this server is running on
-        return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify/" + accountType + '/' + key).toUriString();
-    }
-
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = getUserByEmail(email);
@@ -173,5 +164,14 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
                 .addValue("lastName", user.getLastName())
                 .addValue("email", user.getEmail())
                 .addValue("password", passwordEncoder.encode(user.getPassword()));
+    }
+
+    private Integer getEmailCount(String email) {
+        return jdbc.queryForObject(COUNT_USER_EMAIL_QUERY, of("email", email), Integer.class);
+    }
+
+    private String getVerificationUrl(String key, String accountType) {
+        // ServletUriComponentsBuilder.fromCurrentContextPath() method returns the url that this server is running on
+        return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify/" + accountType + '/' + key).toUriString();
     }
 }
