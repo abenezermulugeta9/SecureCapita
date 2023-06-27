@@ -6,9 +6,11 @@
 
 package com.abenezermulugeta.securecapita.service.implementation;
 
+import com.abenezermulugeta.securecapita.domain.Role;
 import com.abenezermulugeta.securecapita.domain.User;
 import com.abenezermulugeta.securecapita.dto.UserDto;
 import com.abenezermulugeta.securecapita.dtomapper.UserDTOMapper;
+import com.abenezermulugeta.securecapita.repository.RoleRepository;
 import com.abenezermulugeta.securecapita.repository.UserRepository;
 import com.abenezermulugeta.securecapita.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -18,15 +20,16 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository<User> userRepository;
+    private final RoleRepository<Role> roleRepository;
 
     @Override
     public UserDto createUser(User user) {
-        return UserDTOMapper.fromUser(userRepository.create(user));
+        return mapToUserDTO(userRepository.create(user));
     }
 
     @Override
     public UserDto getUserByEmail(String email) {
-        return UserDTOMapper.fromUser(userRepository.getUserByEmail(email));
+        return mapToUserDTO(userRepository.getUserByEmail(email));
     }
 
     @Override
@@ -35,12 +38,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getUser(String email) {
-        return userRepository.getUserByEmail(email);
+    public UserDto verifyCode(String email, String code) {
+        return mapToUserDTO(userRepository.verifyCode(email, code));
     }
 
-    @Override
-    public UserDto verifyCode(String email, String code) {
-        return UserDTOMapper.fromUser(userRepository.verifyCode(email, code));
+    private UserDto mapToUserDTO(User user) {
+        return UserDTOMapper.fromUser(user, roleRepository.getRoleByUserId(user.getId()));
     }
 }

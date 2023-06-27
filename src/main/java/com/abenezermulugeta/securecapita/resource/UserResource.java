@@ -10,6 +10,7 @@ import com.abenezermulugeta.securecapita.domain.HttpResponse;
 import com.abenezermulugeta.securecapita.domain.User;
 import com.abenezermulugeta.securecapita.domain.UserPrincipal;
 import com.abenezermulugeta.securecapita.dto.UserDto;
+import com.abenezermulugeta.securecapita.dtomapper.UserDTOMapper;
 import com.abenezermulugeta.securecapita.form.LoginForm;
 import com.abenezermulugeta.securecapita.provider.TokenProvider;
 import com.abenezermulugeta.securecapita.service.RoleService;
@@ -105,7 +106,7 @@ public class UserResource {
     }
 
     private UserPrincipal getUserPrincipal(UserDto userDto) {
-        return new UserPrincipal(userService.getUser(userDto.getEmail()), roleService.getRoleByUserId(userDto.getId()).getPermission());
+        return new UserPrincipal(UserDTOMapper.toUser(userService.getUserByEmail(userDto.getEmail())), roleService.getRoleByUserId(userDto.getId()).getPermission());
     }
 }
 
