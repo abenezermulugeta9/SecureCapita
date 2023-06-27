@@ -35,7 +35,8 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private static final String[] PUBLIC_URLS = {
             "/users/login/**",
-            "/users/register/**"
+            "/users/register/**",
+            "/users/verify/code/**"
     };
 
     @Bean

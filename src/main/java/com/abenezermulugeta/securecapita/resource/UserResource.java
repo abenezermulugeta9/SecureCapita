@@ -8,18 +8,18 @@ package com.abenezermulugeta.securecapita.resource;
 
 import com.abenezermulugeta.securecapita.domain.HttpResponse;
 import com.abenezermulugeta.securecapita.domain.User;
+import com.abenezermulugeta.securecapita.domain.UserPrincipal;
 import com.abenezermulugeta.securecapita.dto.UserDto;
 import com.abenezermulugeta.securecapita.form.LoginForm;
+import com.abenezermulugeta.securecapita.provider.TokenProvider;
+import com.abenezermulugeta.securecapita.service.RoleService;
 import com.abenezermulugeta.securecapita.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -34,7 +34,9 @@ import static org.springframework.http.HttpStatus.OK;
 @RequiredArgsConstructor
 public class UserResource {
     private final UserService userService;
+    private final RoleService roleService;
     private final AuthenticationManager authenticationManager;
+    private final TokenProvider tokenProvider;
 
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm) {
@@ -53,6 +55,22 @@ public class UserResource {
                         .message("User registered")
                         .httpStatus(CREATED)
                         .statusCode(CREATED.value())
+                        .build());
+    }
+
+    @GetMapping("/verify/code/{email}/{code}")
+    public ResponseEntity<HttpResponse> verifyCode(@PathVariable("email") String email, @PathVariable("code") String code) {
+        UserDto userDto = userService.verifyCode(email, code);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(of(
+                                "user", userDto,
+                                "access_token", tokenProvider.createAccessToken(getUserPrincipal(userDto)),
+                                "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(userDto))))
+                        .message("Login Success")
+                        .httpStatus(OK)
+                        .statusCode(OK.value())
                         .build());
     }
 
@@ -76,10 +94,18 @@ public class UserResource {
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
-                        .data(of("user", userDto))
+                        .data(of(
+                                "user", userDto,
+                                "access_token", tokenProvider.createAccessToken(getUserPrincipal(userDto)),
+                                "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(userDto))))
                         .message("Login successful.")
                         .httpStatus(OK)
                         .statusCode(OK.value())
                         .build());
     }
+
+    private UserPrincipal getUserPrincipal(UserDto userDto) {
+        return new UserPrincipal(userService.getUser(userDto.getEmail()), roleService.getRoleByUserId(userDto.getId()).getPermission());
+    }
 }
+

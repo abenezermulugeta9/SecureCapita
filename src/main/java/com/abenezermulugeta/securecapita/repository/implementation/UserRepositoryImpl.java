@@ -151,10 +151,29 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
              * Uncomment this line to activate two-factor authentication using SMS
              * sendSMS(userDto.getPhone(), "From: SecureCapita \n Use the following code to enable two-factor authentication. \n Verification Code: " + verificationCode);
              * */
-
+            log.info("Verification code: {}", verificationCode);
         } catch (Exception exception) {
             log.error(exception.getMessage());
             throw new ApiException("An error occurred. Please try again");
+        }
+    }
+
+    @Override
+    public User verifyCode(String email, String code) {
+        try {
+            User userByCode = jdbc.queryForObject(SELECT_USER_BY_CODE_QUERY, of("code", code), new UserRowMapper());
+            User userByEmail = jdbc.queryForObject(SELECT_USER_BY_EMAIL_QUERY, of("email", email), new UserRowMapper());
+
+            if(userByCode.getEmail().equalsIgnoreCase(userByEmail.getEmail())) {
+                jdbc.update(DELETE_CODE, of("code", code));
+                return userByCode;
+            } else {
+                throw new ApiException("Code is invalid. Can you check please?");
+            }
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ApiException("Could not find record.");
+        } catch (Exception exception) {
+            throw new ApiException("An error occurred. Please try again.");
         }
     }
 
