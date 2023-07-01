@@ -4,19 +4,18 @@ pipeline {
   stages {
     stage("build") {
       steps {
-        // sh "mvn clean install"
+        sh "mvn clean install"
         echo "application built"
       }
     }
     stage("test") {
       steps {
-        // sh "mvn clean install"
+        sh "mvn test"
         echo "unit tests run"
       }
     }
     stage("deploy") {
       steps {
-        // sh "mvn clean install"
         echo "application deployed to aws..."
       }
     }
