@@ -6,7 +6,10 @@ pipeline {
       steps {
         sh "mvn clean install"
       }
-      steps ("test") {
+    }
+
+    stage("test") {
+      steps {
         sh "mvn test"
       }
     }
