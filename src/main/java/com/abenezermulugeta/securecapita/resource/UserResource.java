@@ -19,7 +19,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -29,6 +29,7 @@ import static java.time.LocalTime.now;
 import static java.util.Map.of;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.security.authentication.UsernamePasswordAuthenticationToken.unauthenticated;
 
 @RestController
 @RequestMapping(path = "/users")
@@ -41,7 +42,8 @@ public class UserResource {
 
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginForm.getEmail(), loginForm.getPassword()));
+        // unauthenticated() is a factory method inside UsernamePasswordAuthenticationToken class that returns the object of UsernamePasswordAuthenticationToken
+        authenticationManager.authenticate(unauthenticated(loginForm.getEmail(), loginForm.getPassword()));
         UserDto userDto = userService.getUserByEmail(loginForm.getEmail());
         return userDto.isUsingMfa() ? sendVerificationCode(userDto) : sendResponse(userDto);
     }
@@ -53,7 +55,7 @@ public class UserResource {
                 HttpResponse.builder()
                         .timeStamp(now().toString())
                         .data(of("user", userDto))
-                        .message("User registered")
+                        .message("User registered.")
                         .httpStatus(CREATED)
                         .statusCode(CREATED.value())
                         .build());
@@ -69,14 +71,25 @@ public class UserResource {
                                 "user", userDto,
                                 "access_token", tokenProvider.createAccessToken(getUserPrincipal(userDto)),
                                 "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(userDto))))
-                        .message("Login Success")
+                        .message("Login successful.")
                         .httpStatus(OK)
                         .statusCode(OK.value())
                         .build());
     }
 
-    private URI getUri() {
-        return URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/get/<userId>").toUriString());
+    // The argument for the method "Authentication" is set from CustomAuthorizationFilter automatically, Spring took care of it
+    @GetMapping("/profile")
+    public ResponseEntity<HttpResponse> profile(Authentication authentication) {
+        // authentication.getName() holds the email of the currently authenticated user
+        UserDto userDto = userService.getUserByEmail(authentication.getName());
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(of("user", userDto))
+                        .message("User profile retrieved.")
+                        .httpStatus(OK)
+                        .statusCode(OK.value())
+                        .build());
     }
 
     private ResponseEntity<HttpResponse> sendVerificationCode(UserDto userDto) {
@@ -107,6 +120,10 @@ public class UserResource {
 
     private UserPrincipal getUserPrincipal(UserDto userDto) {
         return new UserPrincipal(UserDTOMapper.toUser(userService.getUserByEmail(userDto.getEmail())), roleService.getRoleByUserId(userDto.getId()).getPermission());
+    }
+
+    private URI getUri() {
+        return URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/get/<userId>").toUriString());
     }
 }
 

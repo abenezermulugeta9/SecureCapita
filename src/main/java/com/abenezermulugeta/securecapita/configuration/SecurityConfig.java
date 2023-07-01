@@ -6,6 +6,7 @@
 
 package com.abenezermulugeta.securecapita.configuration;
 
+import com.abenezermulugeta.securecapita.filter.CustomAuthorizationFilter;
 import com.abenezermulugeta.securecapita.handler.CustomAccessDeniedHandler;
 import com.abenezermulugeta.securecapita.handler.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
@@ -33,6 +35,7 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final UserDetailsService userDetailsService;
+    private final CustomAuthorizationFilter customAuthorizationFilter;
     private static final String[] PUBLIC_URLS = {
             "/users/login/**",
             "/users/register/**",
@@ -59,6 +62,9 @@ public class SecurityConfig {
 
         // Every other request should be authenticated
         http.authorizeHttpRequests().anyRequest().authenticated();
+
+        // Our custom authorization filter goes in here
+        http.addFilterBefore(customAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
