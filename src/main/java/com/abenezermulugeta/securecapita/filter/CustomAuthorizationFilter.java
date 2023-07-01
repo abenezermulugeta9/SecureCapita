@@ -7,6 +7,7 @@
 package com.abenezermulugeta.securecapita.filter;
 
 import com.abenezermulugeta.securecapita.provider.TokenProvider;
+import com.abenezermulugeta.securecapita.utils.ExceptionUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,7 +64,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
             log.error(exception.getMessage());
-//            processError(request, response, exception);
+            ExceptionUtils.processError(request, response, exception);
         }
     }
 
