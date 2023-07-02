@@ -9,7 +9,7 @@ package com.abenezermulugeta.securecapita.repository.implementation;
 import com.abenezermulugeta.securecapita.domain.Role;
 import com.abenezermulugeta.securecapita.domain.User;
 import com.abenezermulugeta.securecapita.domain.UserPrincipal;
-import com.abenezermulugeta.securecapita.dto.UserDto;
+import com.abenezermulugeta.securecapita.dto.UserDTO;
 import com.abenezermulugeta.securecapita.exception.ApiException;
 import com.abenezermulugeta.securecapita.repository.RoleRepository;
 import com.abenezermulugeta.securecapita.repository.UserRepository;
@@ -121,7 +121,7 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
             throw new UsernameNotFoundException(USER_NOT_FOUND);
         } else {
             log.info("User found in the database: {}", email);
-            return new UserPrincipal(user, roleRepository.getRoleByUserId(user.getId()).getPermission());
+            return new UserPrincipal(user, roleRepository.getRoleByUserId(user.getId()));
         }
     }
 
@@ -139,7 +139,7 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
     }
 
     @Override
-    public void sendVerificationCode(UserDto userDto) {
+    public void sendVerificationCode(UserDTO userDto) {
         String expirationDate = format(addDays(new Date(), 1), DATE_FORMAT);
         String verificationCode = randomAlphabetic(8).toUpperCase();
 

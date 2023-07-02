@@ -7,6 +7,7 @@
 package com.abenezermulugeta.securecapita.provider;
 
 import com.abenezermulugeta.securecapita.domain.UserPrincipal;
+import com.abenezermulugeta.securecapita.service.UserService;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -14,6 +15,7 @@ import com.auth0.jwt.exceptions.InvalidClaimException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,7 +36,9 @@ import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class TokenProvider {
+    private final UserService userService;
     private static final String AUTHORITIES = "authorities";
     private static final String ISSUER_COMPANY = "ANI_TECH_LLC";
     private static final String AUDIENCE = "CUSTOMER_MANAGEMENT_SERVICE";
@@ -89,7 +93,7 @@ public class TokenProvider {
     }
 
     public Authentication getAuthentication(String email, List<GrantedAuthority> authorities, HttpServletRequest request) {
-        UsernamePasswordAuthenticationToken usernamePasswordAuthToken = new UsernamePasswordAuthenticationToken(email, null, authorities);
+        UsernamePasswordAuthenticationToken usernamePasswordAuthToken = new UsernamePasswordAuthenticationToken(userService.getUserByEmail(email), null, authorities);
         usernamePasswordAuthToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         return usernamePasswordAuthToken;
     }

@@ -9,12 +9,16 @@ package com.abenezermulugeta.securecapita.resource;
 import com.abenezermulugeta.securecapita.domain.HttpResponse;
 import com.abenezermulugeta.securecapita.domain.User;
 import com.abenezermulugeta.securecapita.domain.UserPrincipal;
-import com.abenezermulugeta.securecapita.dto.UserDto;
+import com.abenezermulugeta.securecapita.dto.UserDTO;
 import com.abenezermulugeta.securecapita.dtomapper.UserDTOMapper;
+import com.abenezermulugeta.securecapita.exception.ApiException;
 import com.abenezermulugeta.securecapita.form.LoginForm;
 import com.abenezermulugeta.securecapita.provider.TokenProvider;
 import com.abenezermulugeta.securecapita.service.RoleService;
 import com.abenezermulugeta.securecapita.service.UserService;
+import com.abenezermulugeta.securecapita.utils.ExceptionUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -39,22 +43,23 @@ public class UserResource {
     private final RoleService roleService;
     private final AuthenticationManager authenticationManager;
     private final TokenProvider tokenProvider;
+    private final HttpServletRequest request;
+    private final HttpServletResponse response;
 
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm) {
-        // unauthenticated() is a factory method inside UsernamePasswordAuthenticationToken class that returns the object of UsernamePasswordAuthenticationToken
-        authenticationManager.authenticate(unauthenticated(loginForm.getEmail(), loginForm.getPassword()));
-        UserDto userDto = userService.getUserByEmail(loginForm.getEmail());
-        return userDto.isUsingMfa() ? sendVerificationCode(userDto) : sendResponse(userDto);
+        Authentication authentication = authenticateUser(loginForm.getEmail(), loginForm.getPassword());
+        UserDTO userDTO = getAuthenticatedUser(authentication);
+        return userDTO.isUsingMfa() ? sendVerificationCode(userDTO) : sendResponse(userDTO);
     }
 
     @PostMapping("/register")
     public ResponseEntity<HttpResponse> saveUser(@RequestBody @Valid User user) {
-        UserDto userDto = userService.createUser(user);
+        UserDTO userDTO = userService.createUser(user);
         return ResponseEntity.created(getUri()).body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
-                        .data(of("user", userDto))
+                        .data(of("user", userDTO))
                         .message("User registered.")
                         .httpStatus(CREATED)
                         .statusCode(CREATED.value())
@@ -63,14 +68,14 @@ public class UserResource {
 
     @GetMapping("/verify/code/{email}/{code}")
     public ResponseEntity<HttpResponse> verifyCode(@PathVariable("email") String email, @PathVariable("code") String code) {
-        UserDto userDto = userService.verifyCode(email, code);
+        UserDTO userDTO = userService.verifyCode(email, code);
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
                         .data(of(
-                                "user", userDto,
-                                "access_token", tokenProvider.createAccessToken(getUserPrincipal(userDto)),
-                                "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(userDto))))
+                                "user", userDTO,
+                                "access_token", tokenProvider.createAccessToken(getUserPrincipal(userDTO)),
+                                "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(userDTO))))
                         .message("Login successful.")
                         .httpStatus(OK)
                         .statusCode(OK.value())
@@ -81,45 +86,60 @@ public class UserResource {
     @GetMapping("/profile")
     public ResponseEntity<HttpResponse> profile(Authentication authentication) {
         // authentication.getName() holds the email of the currently authenticated user
-        UserDto userDto = userService.getUserByEmail(authentication.getName());
+        UserDTO userDTO = userService.getUserByEmail(authentication.getName());
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
-                        .data(of("user", userDto))
+                        .data(of("user", userDTO))
                         .message("User profile retrieved.")
                         .httpStatus(OK)
                         .statusCode(OK.value())
                         .build());
     }
 
-    private ResponseEntity<HttpResponse> sendVerificationCode(UserDto userDto) {
-        userService.sendVerificationCode(userDto);
+    private Authentication authenticateUser(String email, String password) {
+        try {
+            // unauthenticated() is a factory method inside UsernamePasswordAuthenticationToken class that returns the object of UsernamePasswordAuthenticationToken
+            Authentication authentication = authenticationManager.authenticate(unauthenticated(email, password));
+            return authentication;
+        } catch (Exception exception) {
+            ExceptionUtils.processError(request, response, exception);
+            throw new ApiException(exception.getMessage());
+        }
+    }
+
+    private UserDTO getAuthenticatedUser(Authentication authentication) {
+        return ((UserPrincipal) authentication.getPrincipal()).getUser();
+    }
+
+    private ResponseEntity<HttpResponse> sendVerificationCode(UserDTO userDTO) {
+        userService.sendVerificationCode(userDTO);
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
-                        .data(of("user", userDto))
+                        .data(of("user", userDTO))
                         .message("Verification code sent.")
                         .httpStatus(OK)
                         .statusCode(OK.value())
                         .build());
     }
 
-    private ResponseEntity<HttpResponse> sendResponse(UserDto userDto) {
+    private ResponseEntity<HttpResponse> sendResponse(UserDTO userDTO) {
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
                         .data(of(
-                                "user", userDto,
-                                "access_token", tokenProvider.createAccessToken(getUserPrincipal(userDto)),
-                                "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(userDto))))
+                                "user", userDTO,
+                                "access_token", tokenProvider.createAccessToken(getUserPrincipal(userDTO)),
+                                "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(userDTO))))
                         .message("Login successful.")
                         .httpStatus(OK)
                         .statusCode(OK.value())
                         .build());
     }
 
-    private UserPrincipal getUserPrincipal(UserDto userDto) {
-        return new UserPrincipal(UserDTOMapper.toUser(userService.getUserByEmail(userDto.getEmail())), roleService.getRoleByUserId(userDto.getId()).getPermission());
+    private UserPrincipal getUserPrincipal(UserDTO userDTO) {
+        return new UserPrincipal(UserDTOMapper.toUser(userService.getUserByEmail(userDTO.getEmail())), roleService.getRoleByUserId(userDTO.getId()));
     }
 
     private URI getUri() {

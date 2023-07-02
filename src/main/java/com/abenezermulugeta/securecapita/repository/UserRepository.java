@@ -7,7 +7,7 @@
 package com.abenezermulugeta.securecapita.repository;
 
 import com.abenezermulugeta.securecapita.domain.User;
-import com.abenezermulugeta.securecapita.dto.UserDto;
+import com.abenezermulugeta.securecapita.dto.UserDTO;
 
 import java.util.Collection;
 
@@ -26,7 +26,7 @@ public interface UserRepository<T extends User> {
     /* Complex Operations */
     User getUserByEmail(String email);
 
-    void sendVerificationCode(UserDto userDto);
+    void sendVerificationCode(UserDTO userDto);
 
     User verifyCode(String email, String code);
 }

@@ -7,14 +7,14 @@
 package com.abenezermulugeta.securecapita.service;
 
 import com.abenezermulugeta.securecapita.domain.User;
-import com.abenezermulugeta.securecapita.dto.UserDto;
+import com.abenezermulugeta.securecapita.dto.UserDTO;
 
 public interface UserService {
-    UserDto createUser(User user);
+    UserDTO createUser(User user);
 
-    UserDto getUserByEmail(String email);
+    UserDTO getUserByEmail(String email);
 
-    void sendVerificationCode(UserDto userDto);
+    void sendVerificationCode(UserDTO userDto);
 
-    UserDto verifyCode(String email, String code);
+    UserDTO verifyCode(String email, String code);
 }
