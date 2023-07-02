@@ -14,8 +14,10 @@ pipeline {
             }
         }
 
-        stage("Dockerizing") {
-            sh "docker ps"
+        stage("Dockerize") {
+            steps {
+                sh "docker ps"
+            }
         }
     }
 }
