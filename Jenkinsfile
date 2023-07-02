@@ -1,23 +1,16 @@
 pipeline {
-  agent any
+    agent any
 
-  stages {
-    stage("build") {
-      steps {
-        sh "mvn clean install"
-        echo "application built"
-      }
+    tools {
+        jdk 'jdk17'
+        maven 'maven3.10.1'
+     }
+
+    stages {
+        stage("compile") {
+            steps {
+                sh "mvn clean compile"
+            }
+        }
     }
-    stage("test") {
-      steps {
-        sh "mvn test"
-        echo "unit tests run"
-      }
-    }
-    stage("deploy") {
-      steps {
-        echo "application deployed to aws..."
-      }
-    }
-  }
 }
