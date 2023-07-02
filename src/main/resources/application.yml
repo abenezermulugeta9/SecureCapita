@@ -1,0 +1,9 @@
+spring:
+  profiles:
+    # With this '@spring.profiles.active@', spring will get the active profile
+    # from either the POM configuration or the application itself.
+    active: @spring.profiles.active@
+
+application:
+  title: SecureCapita
+  version: v1.0

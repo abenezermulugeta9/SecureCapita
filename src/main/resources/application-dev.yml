@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/securecapita
+    username: root
+    password: 12345678@Az
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8InnoDBDialect
+    generate-ddl: true
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+  sql:
+    init:
+      mode: never
+      continue-on-error: false
+
+jwt:
+  secret: a11af233-20c5-4ac4-861f-f8a2de32649c
+
+server:
+  port: 8081
+  # this is used for a whitelabel error wildcards, it tells the server to
+  #go to this specific controller (/error) when an url is not found
+  error:
+    path: /error
+    whiteLabel:
+      enabled: false

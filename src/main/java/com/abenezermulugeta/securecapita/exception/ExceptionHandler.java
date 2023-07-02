@@ -33,6 +33,10 @@ import java.util.stream.Collectors;
  * The purpose of @RestControllerAdvice is to provide centralized exception handling for all @RestController
  * classes in the application. It allows you to define global exception handlers that can be applied to multiple
  * controllers and provide consistent error responses.
+ *
+ * Implementing the ErrorController interface is to handle whitelabel errors (when you route to an url but not
+ * found. the server returns 404 with no response information. So to handle this we used our application.yml
+ * configuration file to navigate to /error url in the server when whitelabel errors occurred.)
  */
 @RestControllerAdvice
 @Slf4j
@@ -67,7 +71,7 @@ public class ExceptionHandler extends ResponseEntityExceptionHandler implements 
         List<FieldError> fieldErrors = exception.getBindingResult().getFieldErrors();
 
         // This gets the validation messages for the fields from the list of the error messages
-        String validationMessages = fieldErrors.stream().map(FieldError::getDefaultMessage).collect(Collectors.joining(", "));
+        String validationMessages = fieldErrors.stream().map(FieldError::getDefaultMessage).collect(Collectors.joining(" | "));
 
         return new ResponseEntity<>(
                 HttpResponse.builder()
