@@ -100,6 +100,7 @@ public class UserResource {
     @GetMapping("/reset-password/{email}")
     public ResponseEntity<HttpResponse> resetPassword(@PathVariable("email") String email) {
         userService.resetPassword(email);
+
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(LocalDateTime.now().toString())
@@ -131,8 +132,8 @@ public class UserResource {
                         .timeStamp(now().toString())
                         .data(of("user", userDTO))
                         .message("Verification code sent.")
-                        .httpStatus(OK)
-                        .statusCode(OK.value())
+                        .httpStatus(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
                         .build());
     }
 
@@ -145,8 +146,8 @@ public class UserResource {
                                 "access_token", tokenProvider.createAccessToken(getUserPrincipal(userDTO)),
                                 "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(userDTO))))
                         .message("Login successful.")
-                        .httpStatus(OK)
-                        .statusCode(OK.value())
+                        .httpStatus(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
                         .build());
     }
 

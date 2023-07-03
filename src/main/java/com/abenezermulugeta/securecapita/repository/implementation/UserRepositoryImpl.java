@@ -31,10 +31,12 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.abenezermulugeta.securecapita.enumeration.RoleType.ROLE_USER;
 import static com.abenezermulugeta.securecapita.enumeration.VerificationType.ACCOUNT;
+import static com.abenezermulugeta.securecapita.enumeration.VerificationType.PASSWORD;
 import static com.abenezermulugeta.securecapita.query.UserQuery.*;
 import static java.util.Map.of;
 import static java.util.Objects.requireNonNull;
@@ -160,12 +162,12 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
 
     @Override
     public User verifyCode(String email, String code) {
-        if(isVerificationCodeExpired(code)) throw new ApiException("This code has expired. Please login again.");
+        if (isVerificationCodeExpired(code)) throw new ApiException("This code has expired. Please login again.");
         try {
             User userByCode = jdbc.queryForObject(SELECT_USER_BY_CODE_QUERY, of("code", code), new UserRowMapper());
             User userByEmail = jdbc.queryForObject(SELECT_USER_BY_EMAIL_QUERY, of("email", email), new UserRowMapper());
 
-            if(userByCode.getEmail().equalsIgnoreCase(userByEmail.getEmail())) {
+            if (userByCode.getEmail().equalsIgnoreCase(userByEmail.getEmail())) {
                 jdbc.update(DELETE_CODE, of("code", code));
                 return userByCode;
             } else {
@@ -180,7 +182,20 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
 
     @Override
     public void resetPassword(String email) {
+        if (getEmailCount(email.trim().toLowerCase()) <= 0)
+            throw new ApiException("There is no account linked to this email. Use a different email.");
 
+        try {
+            String expirationDate = format(addDays(new Date(), 1), DATE_FORMAT);
+            User user = getUserByEmail(email);
+            String verificationUrl = getVerificationUrl(UUID.randomUUID().toString(), PASSWORD.getType());
+            jdbc.update(DELETE_PASSWORD_VERIFICATION_BY_USER_ID_QUERY, Map.of("userId", user.getId()));
+            jdbc.update(INSERT_PASSWORD_VERIFICATION_QUERY, Map.of("userId", user.getId(), "url", verificationUrl, "expirationDate", expirationDate));
+            // TODO send email with url to user
+            log.info("Verification url: {}", verificationUrl);
+        } catch (Exception exception) {
+            throw new ApiException("An error occurred. Please try again.");
+        }
     }
 
     private boolean isVerificationCodeExpired(String code) {

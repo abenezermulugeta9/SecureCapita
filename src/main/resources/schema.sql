@@ -95,17 +95,17 @@ CREATE TABLE AccountVerifications
     CONSTRAINT UQ_AccountVerifications_Url UNIQUE (url)
 );
 
-# Table ResetPasswordVerification
-DROP TABLE IF EXISTS ResetPasswordVerification;
-CREATE TABLE ResetPasswordVerification
+# Table ResetPasswordVerifications
+DROP TABLE IF EXISTS ResetPasswordVerifications;
+CREATE TABLE ResetPasswordVerifications
 (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL,
     url VARCHAR(255) NOT NULL,
     expiration_date DATETIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES Users (id) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT UQ_ResetPasswordVerification_User_Id UNIQUE (user_id),
-    CONSTRAINT UQ_ResetPasswordVerification_Url UNIQUE (url)
+    CONSTRAINT UQ_ResetPasswordVerifications_User_Id UNIQUE (user_id),
+    CONSTRAINT UQ_ResetPasswordVerifications_Url UNIQUE (url)
 );
 
 # Table TwoFactorVerifications
