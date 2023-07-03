@@ -15,9 +15,8 @@ public class UserQuery {
 
     // TwoFactorVerifications Queries
     public static final String INSERT_VERIFICATION_CODE_QUERY = "INSERT INTO TwoFactorVerifications (user_id, code, expiration_date) VALUES (:userId, :verificationCode, :expirationDate)";
+    // This query selects a result by filtering the result of a sub query
     public static final String SELECT_USER_BY_CODE_QUERY = "SELECT * FROM Users WHERE id = (SELECT user_id FROM TwoFactorVerifications WHERE code = :code)";
-
-    //  is_expired alias is used to be mapped to the java code, since mapping the expression "expiration_date < NOW()" is not friendly
     public static final String SELECT_CODE_EXPIRATION_QUERY = "SELECT expiration_date < NOW() AS is_expired FROM TwoFactorVerifications WHERE code = :code";
     public static final String DELETE_VERIFICATION_CODE_BY_USER_ID_QUERY = "DELETE FROM TwoFactorVerifications WHERE user_id = :id";
     public static final String DELETE_CODE = "DELETE FROM TwoFactorVerifications WHERE code = :code";
@@ -25,4 +24,8 @@ public class UserQuery {
     // ResetPasswordVerification Queries
     public static final String INSERT_PASSWORD_VERIFICATION_QUERY = "INSERT INTO ResetPasswordVerifications (user_id, url, expiration_date) VALUES (:userId, :url, :expirationDate)";
     public static final String DELETE_PASSWORD_VERIFICATION_BY_USER_ID_QUERY = "DELETE FROM ResetPasswordVerifications WHERE user_id = :userId";
+    public static final String SELECT_EXPIRATION_BY_URL = "SELECT expiration_date < NOW() AS is_expired FROM ResetPasswordVerifications WHERE url = :url";
+    // This query selects a result by filtering the result of a sub query
+    public static final String SELECT_USER_BY_PASSWORD_URL_QUERY = "SELECT * FROM Users WHERE id = (SELECT user_id FROM ResetPasswordVerifications WHERE url = :url)";
+    public static final String DELETE_PASSWORD_VERIFICATION_QUERY = "DELETE FROM ResetPasswordVerifications WHERE user_id = :userId";
 }

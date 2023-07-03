@@ -30,6 +30,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import static java.time.LocalTime.now;
 import static java.util.Map.of;
@@ -108,6 +109,20 @@ public class UserResource {
                         .httpStatus(HttpStatus.OK)
                         .statusCode(HttpStatus.OK.value())
                         .build());
+    }
+
+    @GetMapping("/verify/password/{key}")
+    public ResponseEntity<HttpResponse> verifyPasswordKey(@PathVariable("key") String key) {
+        UserDTO userDTO = userService.verifyPasswordKey(key);
+
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                    .timeStamp(LocalDateTime.now().toString())
+                    .data(Map.of("user", userDTO))
+                    .message("Enter a new password.")
+                    .httpStatus(HttpStatus.OK)
+                    .statusCode(HttpStatus.OK.value())
+                    .build());
     }
 
     private Authentication authenticateUser(String email, String password) {

@@ -10,6 +10,7 @@ import com.abenezermulugeta.securecapita.domain.Role;
 import com.abenezermulugeta.securecapita.domain.User;
 import com.abenezermulugeta.securecapita.domain.UserPrincipal;
 import com.abenezermulugeta.securecapita.dto.UserDTO;
+import com.abenezermulugeta.securecapita.enumeration.VerificationType;
 import com.abenezermulugeta.securecapita.exception.ApiException;
 import com.abenezermulugeta.securecapita.repository.RoleRepository;
 import com.abenezermulugeta.securecapita.repository.UserRepository;
@@ -198,6 +199,34 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
         }
     }
 
+    @Override
+    public User verifyPasswordKey(String key) {
+        if(isLinkExpired(key, PASSWORD)) throw new ApiException("This link has expired. Please reset your password again.");
+
+        try {
+            User user = jdbc.queryForObject(SELECT_USER_BY_PASSWORD_URL_QUERY, Map.of("url", getVerificationUrl(key, PASSWORD.getType())), new UserRowMapper());
+            jdbc.update(DELETE_PASSWORD_VERIFICATION_QUERY, Map.of("userId", user.getId()));
+            return user;
+        } catch (EmptyResultDataAccessException exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("This link is not valid. Please try resetting password again.");
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException(("An error occurred. Please try again."));
+        }
+    }
+
+    private Boolean isLinkExpired(String key, VerificationType verificationType) {
+        try {
+            return jdbc.queryForObject(SELECT_EXPIRATION_BY_URL, of("url", getVerificationUrl(key, PASSWORD.getType())), Boolean.class);
+        } catch (EmptyResultDataAccessException exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("This link is not valid. Please try resetting password again.");
+        } catch (Exception exception) {
+            throw new ApiException(("An error occurred. Please try again."));
+        }
+    }
+
     private boolean isVerificationCodeExpired(String code) {
         try {
             return jdbc.queryForObject(SELECT_CODE_EXPIRATION_QUERY, of("code", code), Boolean.class);
@@ -222,6 +251,6 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
 
     private String getVerificationUrl(String key, String accountType) {
         // ServletUriComponentsBuilder.fromCurrentContextPath() method returns the url that this server is running on
-        return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify/" + accountType + '/' + key).toUriString();
+        return ServletUriComponentsBuilder.fromCurrentContextPath().path("/users/verify/" + accountType + '/' + key).toUriString();
     }
 }

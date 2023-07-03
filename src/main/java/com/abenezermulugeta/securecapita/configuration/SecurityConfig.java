@@ -40,7 +40,8 @@ public class SecurityConfig {
             "/users/login/**",
             "/users/register/**",
             "/users/verify/code/**",
-            "/users/reset-password/**"
+            "/users/reset-password/**",
+            "/users/verify/password/**"
     };
 
     @Bean

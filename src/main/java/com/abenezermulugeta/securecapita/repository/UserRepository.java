@@ -14,21 +14,15 @@ import java.util.Collection;
 public interface UserRepository<T extends User> {
     /* Basic CRUD Operations */
     T create(T data);
-
     Collection<T> list(int page, int pageSize);
-
     T get(Long id);
-
     T update(T data);
-
     Boolean delete(Long id);
-
     /* Complex Operations */
     User getUserByEmail(String email);
-
     void sendVerificationCode(UserDTO userDto);
-
     User verifyCode(String email, String code);
-
     void resetPassword(String email);
+
+    User verifyPasswordKey(String key);
 }
