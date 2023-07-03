@@ -182,7 +182,7 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
     }
 
     @Override
-    public void resetPassword(String email) {
+    public void sendPasswordResetLink(String email) {
         if (getEmailCount(email.trim().toLowerCase()) <= 0)
             throw new ApiException("There is no account linked to this email. Use a different email.");
 
@@ -205,7 +205,6 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
 
         try {
             User user = jdbc.queryForObject(SELECT_USER_BY_PASSWORD_URL_QUERY, Map.of("url", getVerificationUrl(key, PASSWORD.getType())), new UserRowMapper());
-            jdbc.update(DELETE_PASSWORD_VERIFICATION_QUERY, Map.of("userId", user.getId()));
             return user;
         } catch (EmptyResultDataAccessException exception) {
             log.error(exception.getMessage());
@@ -216,9 +215,22 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
         }
     }
 
+    @Override
+    public void resetPassword(String key, String password, String confirmPassword) {
+        if(!password.equalsIgnoreCase(confirmPassword)) throw new ApiException("Your password doesn't match the confirmation password. Try again.");
+
+        try {
+            jdbc.update(UPDATE_PASSWORD_BY_URL_QUERY, Map.of("password", passwordEncoder.encode(password), "url", getVerificationUrl(key, PASSWORD.getType())));
+            jdbc.update(DELETE_VERIFICATION_BY_URL_QUERY, Map.of("url", getVerificationUrl(key, PASSWORD.getType())));
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException(("An error occurred. Please try again."));
+        }
+    }
+
     private Boolean isLinkExpired(String key, VerificationType verificationType) {
         try {
-            return jdbc.queryForObject(SELECT_EXPIRATION_BY_URL, of("url", getVerificationUrl(key, PASSWORD.getType())), Boolean.class);
+            return jdbc.queryForObject(SELECT_EXPIRATION_BY_URL_QUERY, of("url", getVerificationUrl(key, PASSWORD.getType())), Boolean.class);
         } catch (EmptyResultDataAccessException exception) {
             log.error(exception.getMessage());
             throw new ApiException("This link is not valid. Please try resetting password again.");

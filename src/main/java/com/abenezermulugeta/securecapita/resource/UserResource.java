@@ -13,6 +13,7 @@ import com.abenezermulugeta.securecapita.dto.UserDTO;
 import com.abenezermulugeta.securecapita.dtomapper.UserDTOMapper;
 import com.abenezermulugeta.securecapita.exception.ApiException;
 import com.abenezermulugeta.securecapita.form.LoginForm;
+import com.abenezermulugeta.securecapita.form.PasswordResetForm;
 import com.abenezermulugeta.securecapita.provider.TokenProvider;
 import com.abenezermulugeta.securecapita.service.RoleService;
 import com.abenezermulugeta.securecapita.service.UserService;
@@ -98,9 +99,10 @@ public class UserResource {
                         .build());
     }
 
+    // START - Reset password for users that can't log in
     @GetMapping("/reset-password/{email}")
-    public ResponseEntity<HttpResponse> resetPassword(@PathVariable("email") String email) {
-        userService.resetPassword(email);
+    public ResponseEntity<HttpResponse> sendPasswordResetLink(@PathVariable("email") String email) {
+        userService.sendPasswordResetLink(email);
 
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
@@ -124,6 +126,21 @@ public class UserResource {
                     .statusCode(HttpStatus.OK.value())
                     .build());
     }
+
+    @PutMapping("/reset-password/{key}")
+    public ResponseEntity<HttpResponse> resetPassword(@PathVariable("key") String key, @RequestBody @Valid PasswordResetForm passwordResetForm) {
+        userService.resetPassword(key, passwordResetForm.getPassword(), passwordResetForm.getConfirmPassword());
+
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .message("Password changed.")
+                        .httpStatus(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
+    }
+
+    // END - Reset password for users that can't log in
 
     private Authentication authenticateUser(String email, String password) {
         try {

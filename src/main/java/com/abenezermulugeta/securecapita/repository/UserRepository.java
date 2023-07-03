@@ -22,7 +22,9 @@ public interface UserRepository<T extends User> {
     User getUserByEmail(String email);
     void sendVerificationCode(UserDTO userDto);
     User verifyCode(String email, String code);
-    void resetPassword(String email);
+    void sendPasswordResetLink(String email);
 
     User verifyPasswordKey(String key);
+
+    void resetPassword(String key, String password, String confirmPassword);
 }
