@@ -29,4 +29,6 @@ public interface UserRepository<T extends User> {
     void sendVerificationCode(UserDTO userDto);
 
     User verifyCode(String email, String code);
+
+    void resetPassword(String email);
 }

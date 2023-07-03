@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -28,11 +29,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 
 import static java.time.LocalTime.now;
 import static java.util.Map.of;
-import static org.springframework.http.HttpStatus.CREATED;
-import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.security.authentication.UsernamePasswordAuthenticationToken.unauthenticated;
 
 @RestController
@@ -61,8 +61,8 @@ public class UserResource {
                         .timeStamp(now().toString())
                         .data(of("user", userDTO))
                         .message("User registered.")
-                        .httpStatus(CREATED)
-                        .statusCode(CREATED.value())
+                        .httpStatus(HttpStatus.CREATED)
+                        .statusCode(HttpStatus.CREATED.value())
                         .build());
     }
 
@@ -77,8 +77,8 @@ public class UserResource {
                                 "access_token", tokenProvider.createAccessToken(getUserPrincipal(userDTO)),
                                 "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(userDTO))))
                         .message("Login successful.")
-                        .httpStatus(OK)
-                        .statusCode(OK.value())
+                        .httpStatus(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
                         .build());
     }
 
@@ -92,8 +92,20 @@ public class UserResource {
                         .timeStamp(now().toString())
                         .data(of("user", userDTO))
                         .message("User profile retrieved.")
-                        .httpStatus(OK)
-                        .statusCode(OK.value())
+                        .httpStatus(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
+    }
+
+    @GetMapping("/reset-password/{email}")
+    public ResponseEntity<HttpResponse> resetPassword(@PathVariable("email") String email) {
+        userService.resetPassword(email);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .message("Password resetting instruction sent to your email. Check you inbox. ")
+                        .httpStatus(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
                         .build());
     }
 
