@@ -84,7 +84,9 @@ public class UserResource {
                         .build());
     }
 
-    // The argument for the method "Authentication" is set from CustomAuthorizationFilter automatically, Spring took care of it
+    /**
+     * @param authentication - set from CustomAuthorizationFilter automatically by Spring and injected to the method
+     */
     @GetMapping("/profile")
     public ResponseEntity<HttpResponse> profile(Authentication authentication) {
         // authentication.getName() holds the email of the currently authenticated user
@@ -119,12 +121,12 @@ public class UserResource {
 
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
-                    .timeStamp(LocalDateTime.now().toString())
-                    .data(Map.of("user", userDTO))
-                    .message("Enter a new password.")
-                    .httpStatus(HttpStatus.OK)
-                    .statusCode(HttpStatus.OK.value())
-                    .build());
+                        .timeStamp(LocalDateTime.now().toString())
+                        .data(Map.of("user", userDTO))
+                        .message("Enter a new password.")
+                        .httpStatus(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
     }
 
     @PutMapping("/reset-password/{key}")
@@ -141,6 +143,23 @@ public class UserResource {
     }
 
     // END - Reset password for users that can't log in
+
+    @GetMapping("/verify/account/{key}")
+    public ResponseEntity<HttpResponse> verifyAccount(@PathVariable("key") String key) {
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        /**
+                         * The following code snippet handles the scenario where the service checks the database for an enabled user.
+                         * If the user is found enabled, it initiates the first message prompt. However, in case the service returns false,
+                         * it may indicate a possibility of receiving a stale User object from the userService.verifyAccountKey() method.
+                         * Consequently, the account undergoes a change, but the enabled property remains false.
+                         * */
+                        .message( userService.verifyAccountKey(key).isEnabled() ? "Account already verified" : "Account verified")
+                        .httpStatus(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
+    }
 
     private Authentication authenticateUser(String email, String password) {
         try {
