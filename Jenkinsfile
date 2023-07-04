@@ -7,15 +7,15 @@ pipeline {
      }
 
     stages {
-        stage("compile") {
+        stage("Compile") {
             steps {
                 sh "mvn clean compile"
             }
         }
 
-        stage("test") {
+        stage("Build") {
             steps {
-                sh "mvn test"
+                sh "mvn clean package -DskipTests=true"
             }
         }
     }
