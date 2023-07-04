@@ -19,13 +19,12 @@ import java.time.LocalDateTime;
 public class ErrorResource {
     @RequestMapping("/error")
     public ResponseEntity<HttpResponse> handleWildCardError() {
-        return ResponseEntity.badRequest().body(
+        return new ResponseEntity<>(
                 HttpResponse.builder()
                         .timeStamp(LocalDateTime.now().toString())
                         .reason("This url was not found on the server.")
                         .httpStatus(HttpStatus.NOT_FOUND)
                         .statusCode(HttpStatus.NOT_FOUND.value())
-                        .build());
+                        .build(), HttpStatus.NOT_FOUND);
     }
-
 }
